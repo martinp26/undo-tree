@@ -561,6 +561,9 @@
 ;;; =====================================================================
 ;;;              Global variables and customization options
 
+(defvar undo-tree-windows nil
+  "Window configuration when invoking visualizer.")
+
 (defvar buffer-undo-tree nil
   "Tree of undo entries in current buffer.")
 (make-variable-buffer-local 'buffer-undo-tree)
@@ -1425,6 +1428,7 @@ Argument is a character, naming the register."
   (when (eq buffer-undo-list t) (error "No undo information in this buffer"))
   ;; transfer entries accumulated in `buffer-undo-list' to `buffer-undo-tree'
   (undo-list-transfer-to-tree)
+  (setq undo-tree-windows (current-window-configuration))
   ;; add hook to kill visualizer buffer if original buffer is changed
   (add-hook 'before-change-functions 'undo-tree-kill-visualizer nil t)
   ;; prepare *undo-tree* buffer, then draw tree in it
@@ -1816,8 +1820,10 @@ using `undo-tree-redo' or `undo-tree-visualizer-redo'."
       (with-current-buffer undo-tree-visualizer-buffer
 	(remove-hook 'before-change-functions 'undo-tree-kill-visualizer t))
     (let ((parent undo-tree-visualizer-buffer)
-	  window)
-      (kill-buffer nil)
+	  window
+          (temp-buffer (current-buffer)))
+      (set-window-configuration undo-tree-windows)
+      (kill-buffer temp-buffer)
       (if (setq window (get-buffer-window parent))
 	  (select-window window)
 	(switch-to-buffer parent)))))
