@@ -608,6 +608,17 @@ in visualizer."
 in visualizer."
   :group 'undo-tree)
 
+(defface undo-tree-visualizer-text-added-face
+  '((t (:background "light green")))
+  "Face for displaying nodes that added text."
+  :group 'undo-tree)
+
+(defface undo-tree-visualizer-text-removed-face
+  '((t (:background "IndianRed")))
+  "Face for displaying nodes that removed text."
+  :group 'undo-tree)
+
+
 (defvar undo-tree-visualizer-map nil
   "Keymap used in undo-tree visualizer.")
 
@@ -1519,7 +1530,8 @@ Argument is a character, naming the register."
       (concat "-" s))
      ((setq s (undo-tree-undo-entry-to-text
                (car (undo-tree-node-redo node)) current))
-      (concat "+" s)))))
+      (concat "+" s))
+     ("o"))))
 
 
 (defun undo-tree-draw-node (node &optional current)
@@ -1540,17 +1552,27 @@ Argument is a character, naming the register."
      (put-text-property (- (point) 3) (+ (point) 5)
                         'undo-tree-node node))
     (2  ;; contents
-     (backward-char 4)
-     (if current (undo-tree-insert ?*) (undo-tree-insert ? ))
-     (let (s)
-       (or (setq s (undo-tree-node-to-text node current))
-           (setq s "   o    "))
-       (undo-tree-insert (substring s 0 8)))
-     (backward-char 5)
-     (move-marker (undo-tree-node-marker node) (point))
-     (put-text-property (- (point) 3) (+ (point) 5)
-                        'undo-tree-node node))
-     ))
+     (let* ((s (undo-tree-node-to-text node current))
+            ;; color code adds and removes
+            (undo-tree-insert-face
+             (cond
+              ((equal (elt s 0) ?-) 'undo-tree-visualizer-text-removed-face)
+              ((equal (elt s 0) ?+) 'undo-tree-visualizer-text-added-face)
+              ((equal (elt s 0) ?o) nil)))
+            ;; filter out control characters fixme: not complete yet
+            (s (replace-regexp-in-string "\n" "" (substring s 1)))
+            (space (max undo-tree-visualizer-spacing 9))
+            (s (concat "[" (substring s 0 (min (- space 3) (length s))) "]"))
+            (l (/ (length s) 2))
+            (r (- (length s) l)))
+       (backward-char (1+ l))
+       (if current (undo-tree-insert ?*) (undo-tree-insert ? ))
+       (undo-tree-insert s)
+       (backward-char r)
+       (move-marker (undo-tree-node-marker node) (point))
+       (put-text-property (- (point) l) (+ (point) r)
+                          'undo-tree-node node)))
+    ))
 
 
 (defun undo-tree-draw-subtree (node &optional active-branch)
