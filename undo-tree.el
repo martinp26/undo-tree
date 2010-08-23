@@ -627,7 +627,15 @@ in visualizer."
   "Parent buffer in visualizer.")
 (make-variable-buffer-local 'undo-tree-visualizer-buffer)
 
-(defvar undo-tree-visualizer-display-mode 0
+(defcustom undo-tree-visualizer-initial-display-mode 2
+  "0 for plain view, 1 for time-stamp view, 2 for content view in
+  visualizer."
+  :group 'undo-tree
+  :type '(integer
+          :match (lambda (w n) (and (integerp n) (>= n 0) (< n 3)))))
+
+(defvar undo-tree-visualizer-display-mode
+  undo-tree-visualizer-initial-display-mode
   "0 for plain view, 1 for time-stamp view, 2 for content view in
   visualizer.")
 (make-variable-buffer-local 'undo-tree-visualizer-display-mode)
