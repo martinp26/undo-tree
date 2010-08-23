@@ -582,6 +582,60 @@ Must be a postivie odd integer."
           :match (lambda (w n) (and (integerp n) (> n 0) (= (mod n 2) 1)))))
 (make-variable-buffer-local 'undo-tree-visualizer-spacing)
 
+(defcustom undo-tree-visualizer-tree-left ?╭
+  "Left corner for visualizer tree.
+Either use ASCII `+' or unicode `┌' or `╭'"
+  :group 'undo-tree
+  :type 'character)
+
+(defcustom undo-tree-visualizer-tree-right ?╮
+  "Right corner for visualizer tree.
+Either use ASCII `+' or unicode `┐' or `╮'"
+  :group 'undo-tree
+  :type 'character)
+
+(defcustom undo-tree-visualizer-tree-horizontal ?─
+  "Horizontal bar for visualizer tree.
+Either use ASCII `-' or unicode `─'"
+  :group 'undo-tree
+  :type 'character)
+
+(defcustom undo-tree-visualizer-tree-cross ?┼
+  "Cross-shape for visualizer tree.
+Either use ASCII `+' or unicode `┼'"
+  :group 'undo-tree
+  :type 'character)
+
+(defcustom undo-tree-visualizer-tree-tee ?┬
+  "T-shape for visualizer tree.
+Either use ASCII `+' or unicode `┬'"
+  :group 'undo-tree
+  :type 'character)
+
+(defcustom undo-tree-visualizer-tree-eet ?┴
+  "Inverted T-shape for visualizer tree.
+Either use ASCII `+' or unicode `┴'"
+  :group 'undo-tree
+  :type 'character)
+
+(defcustom undo-tree-visualizer-tree-vertical ?│
+  "Vertical bar for visualizer tree.
+Either use ASCII `|' or unicode `│'"
+  :group 'undo-tree
+  :type 'character)
+
+(defcustom undo-tree-visualizer-tree-node ?○
+  "Standard node for visualizer tree.
+Either use ASCII `o' or unicode `○'"
+  :group 'undo-tree
+  :type 'character)
+
+(defcustom undo-tree-visualizer-tree-active-node ?×
+  "Active node for visualizer tree.
+Either use ASCII `x' or unicode `×'"
+  :group 'undo-tree
+  :type 'character)
+
 (defvar undo-tree-map nil
   "Keymap used in undo-tree-mode.")
 
@@ -1800,7 +1854,7 @@ Argument is a character, naming the register."
   (if undo-tree-visualizer-timestamps
       (progn
         (backward-char 4)
-        (if current (undo-tree-insert ?*) (undo-tree-insert ? ))
+        (undo-tree-insert (if current ?* ? ))
         (undo-tree-insert
          (undo-tree-timestamp-to-string (undo-tree-node-timestamp node)))
         (backward-char 5)
@@ -1818,7 +1872,7 @@ Argument is a character, naming the register."
 			  (or (and (consp undo-tree-insert-face)
 				   undo-tree-insert-face)
 			      (list undo-tree-insert-face))))))
-	  (undo-tree-insert ?x)))
+	  (undo-tree-insert undo-tree-visualizer-tree-active-node)))
        ((and register (eq node (get-register register)))
 	(let ((undo-tree-insert-face
 	       (cons 'undo-tree-visualizer-register-face
@@ -1827,7 +1881,7 @@ Argument is a character, naming the register."
 				   undo-tree-insert-face)
 			      (list undo-tree-insert-face))))))
 	  (undo-tree-insert register)))
-       (t (undo-tree-insert ?o))))
+       (t (undo-tree-insert undo-tree-visualizer-tree-node))))
     (backward-char 1)
     (put-text-property (point) (1+ (point)) 'undo-tree-node node)))
 
@@ -1835,9 +1889,8 @@ Argument is a character, naming the register."
 (defun undo-tree-draw-subtree (node &optional active-branch)
   ;; Draw subtree rooted at NODE. The subtree will start from point.
   ;; If ACTIVE-BRANCH is non-nil, just draw active branch below NODE.
-  ;; If TIMESTAP is non-nil, draw time-stamps instead of "o" at nodes.
   (let ((num-children (length (undo-tree-node-next node)))
-        node-list pos trunk-pos n)
+        node-list pos trunk-pos last-pos n inside-branch)
     ;; draw node itself
     (undo-tree-draw-node node)
 
@@ -1850,10 +1903,7 @@ Argument is a character, naming the register."
      ;; this makes the code clearer and more efficient)
      ((= num-children 1)
       (undo-tree-move-down 1)
-      (undo-tree-insert ?|)
-      (backward-char 1)
-      (undo-tree-move-down 1)
-      (undo-tree-insert ?|)
+      (undo-tree-insert undo-tree-visualizer-tree-vertical)
       (backward-char 1)
       (undo-tree-move-down 1)
       (setq n (car (undo-tree-node-next node)))
@@ -1868,8 +1918,6 @@ Argument is a character, naming the register."
      ;; if node had multiple children, draw branches
      (t
       (undo-tree-move-down 1)
-      (undo-tree-insert ?|)
-      (backward-char 1)
       (setq trunk-pos (point))
       ;; left subtrees
       (backward-char
@@ -1878,27 +1926,39 @@ Argument is a character, naming the register."
            (car (undo-tree-node-next node)))))
       (setq pos (point))
       (setq n (cons nil (undo-tree-node-next node)))
+
+      ;; treat everything as inside-branch if we have to draw
+      ;; everything anyway
+      (when (null active-branch)
+        (setq inside-branch t))
+
       (dotimes (i (/ num-children 2))
         (setq n (cdr n))
-        (when (or (null active-branch)
-                  (eq (car n)
-                      (nth (undo-tree-node-branch node)
-                           (undo-tree-node-next node))))
-          (undo-tree-move-forward 2)
-          (undo-tree-insert ?_ (- trunk-pos pos 2))
+        ;; activate inside-branch if you just walked in (left to right)
+        (when (and active-branch
+                   (eq (car n)
+                       (nth (undo-tree-node-branch node)
+                            (undo-tree-node-next node))))
+          (setq inside-branch t))
+        (when inside-branch
+          (undo-tree-insert (if (equal i 0)
+                                undo-tree-visualizer-tree-left
+                              undo-tree-visualizer-tree-tee))
+          (undo-tree-insert undo-tree-visualizer-tree-horizontal
+                            (- trunk-pos pos 1))
           (goto-char pos)
-          (undo-tree-move-forward 1)
-          (undo-tree-move-down 1)
-          (undo-tree-insert ?/)
-          (backward-char 2)
-          (undo-tree-move-down 1)
-          ;; link node to its representation in visualizer
-          (unless (markerp (undo-tree-node-marker (car n)))
-            (setf (undo-tree-node-marker (car n)) (make-marker))
-            (set-marker-insertion-type (undo-tree-node-marker (car n)) nil))
-          (move-marker (undo-tree-node-marker (car n)) (point))
-          ;; add node to list of nodes to draw next
-          (push (car n) node-list))
+          (when (or (null active-branch)
+                    (eq (car n)
+                        (nth (undo-tree-node-branch node)
+                             (undo-tree-node-next node))))
+            (undo-tree-move-down 1)
+            ;; link node to its representation in visualizer
+            (unless (markerp (undo-tree-node-marker (car n)))
+              (setf (undo-tree-node-marker (car n)) (make-marker))
+              (set-marker-insertion-type (undo-tree-node-marker (car n)) nil))
+            (move-marker (undo-tree-node-marker (car n)) (point))
+            ;; add node to list of nodes to draw next
+            (push (car n) node-list)))
         (goto-char pos)
         (undo-tree-move-forward
          (+ (undo-tree-node-char-rwidth (car n))
@@ -1906,59 +1966,82 @@ Argument is a character, naming the register."
             undo-tree-visualizer-spacing 1))
         (setq pos (point)))
       ;; middle subtree (only when number of children is odd)
-      (when (= (mod num-children 2) 1)
-        (setq n (cdr n))
-        (when (or (null active-branch)
-                  (eq (car n)
-                      (nth (undo-tree-node-branch node)
-                           (undo-tree-node-next node))))
-          (undo-tree-move-down 1)
-          (undo-tree-insert ?|)
-          (backward-char 1)
-          (undo-tree-move-down 1)
-          ;; link node to its representation in visualizer
-          (unless (markerp (undo-tree-node-marker (car n)))
-            (setf (undo-tree-node-marker (car n)) (make-marker))
-            (set-marker-insertion-type (undo-tree-node-marker (car n)) nil))
-          (move-marker (undo-tree-node-marker (car n)) (point))
-          ;; add node to list of nodes to draw next
-          (push (car n) node-list))
-        (goto-char pos)
-        (undo-tree-move-forward
-         (+ (undo-tree-node-char-rwidth (car n))
-            (if (cadr n) (undo-tree-node-char-lwidth (cadr n)) 0)
-            undo-tree-visualizer-spacing 1))
-        (setq pos (point)))
+      (if (= (mod num-children 2) 1)
+          ;; middle branch exists
+          (progn
+            (setq n (cdr n))
+            (undo-tree-insert undo-tree-visualizer-tree-cross)
+            (backward-char 1)
+            (when (or (null active-branch)
+                      (eq (car n)
+                          (nth (undo-tree-node-branch node)
+                               (undo-tree-node-next node))))
+              ;; signal inside logic that we are done here
+              (when active-branch
+                (setq inside-branch t))
+              (undo-tree-move-down 1)
+              ;; link node to its representation in visualizer
+              (unless (markerp (undo-tree-node-marker (car n)))
+                (setf (undo-tree-node-marker (car n)) (make-marker))
+                (set-marker-insertion-type (undo-tree-node-marker (car n)) nil))
+              (move-marker (undo-tree-node-marker (car n)) (point))
+              ;; add node to list of nodes to draw next
+              (push (car n) node-list))
+            (goto-char pos)
+            (undo-tree-move-forward
+             (+ (undo-tree-node-char-rwidth (car n))
+                (if (cadr n) (undo-tree-node-char-lwidth (cadr n)) 0)
+                undo-tree-visualizer-spacing 1))
+            (setq pos (point)))
+        ;; middle branch does not exist
+        (goto-char trunk-pos)
+        (undo-tree-insert undo-tree-visualizer-tree-eet))
+
+      ;; active / deactivate inside-branch if it was inactive / active
+      ;; in the left branch and we only draw the active branch
+      (when active-branch
+        (setq inside-branch (null inside-branch)))
+
       ;; right subtrees
+      (setq last-pos trunk-pos)
       (incf trunk-pos)
       (dotimes (i (/ num-children 2))
         (setq n (cdr n))
-        (when (or (null active-branch)
-                  (eq (car n)
-                      (nth (undo-tree-node-branch node)
-                           (undo-tree-node-next node))))
-          (goto-char trunk-pos)
-          (undo-tree-insert ?_ (- pos trunk-pos 1))
+        (when inside-branch
+          (goto-char (1+ last-pos))
+          (undo-tree-insert undo-tree-visualizer-tree-horizontal
+                            (- pos last-pos 1))
           (goto-char pos)
+          (undo-tree-insert (if (equal (1+ i) (/ num-children 2))
+                                undo-tree-visualizer-tree-right
+                              undo-tree-visualizer-tree-tee))
           (backward-char 1)
-          (undo-tree-move-down 1)
-          (undo-tree-insert ?\\)
-          (undo-tree-move-down 1)
-          ;; link node to its representation in visualizer
-          (unless (markerp (undo-tree-node-marker (car n)))
-            (setf (undo-tree-node-marker (car n)) (make-marker))
-            (set-marker-insertion-type (undo-tree-node-marker (car n)) nil))
-          (move-marker (undo-tree-node-marker (car n)) (point))
-          ;; add node to list of nodes to draw next
-          (push (car n) node-list))
+          (when (or (null active-branch)
+                    (eq (car n)
+                        (nth (undo-tree-node-branch node)
+                             (undo-tree-node-next node))))
+            (undo-tree-move-down 1)
+            ;; link node to its representation in visualizer
+            (unless (markerp (undo-tree-node-marker (car n)))
+              (setf (undo-tree-node-marker (car n)) (make-marker))
+              (set-marker-insertion-type (undo-tree-node-marker (car n)) nil))
+            (move-marker (undo-tree-node-marker (car n)) (point))
+            ;; add node to list of nodes to draw next
+            (push (car n) node-list)))
+        ;; deactivate inside-branch if you just walked out
+        (when (and active-branch
+                   (eq (car n)
+                       (nth (undo-tree-node-branch node)
+                            (undo-tree-node-next node))))
+          (setq inside-branch nil))
         (when (cdr n)
           (goto-char pos)
           (undo-tree-move-forward
            (+ (undo-tree-node-char-rwidth (car n))
               (if (cadr n) (undo-tree-node-char-lwidth (cadr n)) 0)
               undo-tree-visualizer-spacing 1))
-          (setq pos (point))))
-      ))
+          (setq last-pos pos)
+          (setq pos (point))))))
     ;; return list of nodes to draw next
     (nreverse node-list)))
 
