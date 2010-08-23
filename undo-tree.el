@@ -634,8 +634,7 @@ in visualizer."
   :type '(integer
           :match (lambda (w n) (and (integerp n) (>= n 0) (< n 3)))))
 
-(defvar undo-tree-visualizer-display-mode
-  undo-tree-visualizer-initial-display-mode
+(defvar undo-tree-visualizer-display-mode nil
   "0 for plain view, 1 for time-stamp view, 2 for content view in
   visualizer.")
 (make-variable-buffer-local 'undo-tree-visualizer-display-mode)
@@ -1457,6 +1456,8 @@ Argument is a character, naming the register."
     (setq buffer-undo-tree undo-tree)
     (setq cursor-type nil)
     (setq buffer-read-only nil)
+    (undo-tree-visualizer-set-display-mode
+     undo-tree-visualizer-initial-display-mode)
     (undo-tree-draw-tree undo-tree)
     (setq buffer-read-only t)))
 
@@ -1481,7 +1482,10 @@ Argument is a character, naming the register."
    (max (/ (window-width) 2)
         (+ (undo-tree-node-char-lwidth (undo-tree-root undo-tree))
            ;; add space for left part of left-most time-stamp
-           (if (>= undo-tree-visualizer-display-mode 1) 4 0)
+           (case undo-tree-visualizer-display-mode
+             (0 0)
+             (1 4)
+             (2 (/ undo-tree-visualizer-spacing 2)))
            2)))                ; left margin
   ;; draw undo-tree
   (let ((undo-tree-insert-face 'undo-tree-visualizer-default-face)
@@ -1524,20 +1528,34 @@ Argument is a character, naming the register."
 
 
 (defun undo-tree-undo-entry-to-text (entry current)
+  "Return a string representation for an undo-list entry if
+possible."
   (if (and (consp entry) (stringp (car entry)))
       (car entry)
-    nil))
+    ;; if this is the current entry and it is of form (beg . end), we
+    ;; can try to extract some text from the buffer
+    (if (and current (consp entry) (integerp (car entry)) (integerp (cdr entry)))
+        (save-excursion
+          (set-buffer undo-tree-visualizer-buffer)
+          (buffer-substring-no-properties (car entry) (cdr entry)))
+      nil)))
 
 
 (defun undo-tree-node-to-text (node current)
   "Compute a string representation for a given node."
   (let (s)
     (cond
+     ;; look into the undo entry
+     ((setq s (undo-tree-undo-entry-to-text
+               (car (undo-tree-node-undo node)) nil))
+      (concat "-" s))
+     ;; look into the redo entry
+     ((setq s (undo-tree-undo-entry-to-text
+               (car (undo-tree-node-redo node)) nil))
+      (concat "+" s))
+     ;; look into the undo entry again, maybe with current we get result
      ((setq s (undo-tree-undo-entry-to-text
                (car (undo-tree-node-undo node)) current))
-      (concat "-" s))
-     ((setq s (undo-tree-undo-entry-to-text
-               (car (undo-tree-node-redo node)) current))
       (concat "+" s))
      ("o"))))
 
@@ -1572,15 +1590,19 @@ Argument is a character, naming the register."
             (s (replace-regexp-in-string "\n" "" (substring s 1)))
             (s (substring s 0 (min (- space 3) (length s))))
             (l (/ (+ 2 (length s)) 2))
-            (r (- (+ 2 (length s)) l)))
-       (backward-char (1+ l))
+            (r (- (+ 2 (length s)) l))
+            (lw (/ (1+ space) 2))
+            (rw (- space lw)))
+       (backward-char lw)
+       (undo-tree-insert ?  (- lw l 1))
        (undo-tree-insert (if current "*[" " [" ))
        (let ((undo-tree-insert-face undo-tree-insert-face-temp))
          (undo-tree-insert s))
        (undo-tree-insert "]")
-       (backward-char r)
+       (undo-tree-insert ?  (- rw r))
+       (backward-char rw)
        (move-marker (undo-tree-node-marker node) (point))
-       (put-text-property (- (point) l) (+ (point) r)
+       (put-text-property (- (point) lw) (+ (point) rw)
                           'undo-tree-node node)))
     ))
 
@@ -1906,29 +1928,26 @@ at POS."
 (defun undo-tree-visualizer-toggle-display-mode ()
   "Toggle display between a plain tree, time-stamps, and content."
   (interactive)
-  (setq undo-tree-visualizer-display-mode
-        (1+ undo-tree-visualizer-display-mode))
-  (when (> undo-tree-visualizer-display-mode 2)
-    (setq undo-tree-visualizer-display-mode 0))
-  (case undo-tree-visualizer-display-mode
-    ; plain
-    (0
-     (setq undo-tree-visualizer-spacing
-           (default-value 'undo-tree-visualizer-spacing)))
-    ; time-stamps
-    (1
-     (setq undo-tree-visualizer-spacing
-           (max 9 (default-value 'undo-tree-visualizer-spacing))))
-
-    ; contents
-    (2
-     (setq undo-tree-visualizer-spacing
-           (max 9 (default-value 'undo-tree-visualizer-spacing))))
-    )
+  (undo-tree-visualizer-set-display-mode
+   (mod (1+ undo-tree-visualizer-display-mode) 3))
   ;; redraw tree
   (setq buffer-read-only nil)
   (undo-tree-draw-tree buffer-undo-tree)
   (setq buffer-read-only t))
+
+
+(defun undo-tree-visualizer-set-display-mode (mode)
+  (setq undo-tree-visualizer-display-mode mode)
+  (case mode
+    ; plain
+    (0 (setq undo-tree-visualizer-spacing
+             (default-value 'undo-tree-visualizer-spacing)))
+    ; time-stamps
+    (1 (setq undo-tree-visualizer-spacing
+             (max 9 (default-value 'undo-tree-visualizer-spacing))))
+    ; contents
+    (2 (setq undo-tree-visualizer-spacing
+             (max 9 (default-value 'undo-tree-visualizer-spacing))))))
 
 
 (defun undo-tree-visualizer-scroll-left (&optional arg)
