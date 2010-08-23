@@ -1560,22 +1560,24 @@ Argument is a character, naming the register."
      (put-text-property (- (point) 3) (+ (point) 5)
                         'undo-tree-node node))
     (2  ;; contents
-     (let* ((s (undo-tree-node-to-text node current))
+     (let* ((space (max undo-tree-visualizer-spacing 9))
             ;; color code adds and removes
-            (undo-tree-insert-face
+            (s (undo-tree-node-to-text node current))
+            (undo-tree-insert-face-temp
              (cond
               ((equal (elt s 0) ?-) 'undo-tree-visualizer-text-removed-face)
               ((equal (elt s 0) ?+) 'undo-tree-visualizer-text-added-face)
               ((equal (elt s 0) ?o) nil)))
             ;; filter out control characters fixme: not complete yet
             (s (replace-regexp-in-string "\n" "" (substring s 1)))
-            (space (max undo-tree-visualizer-spacing 9))
-            (s (concat "[" (substring s 0 (min (- space 3) (length s))) "]"))
-            (l (/ (length s) 2))
-            (r (- (length s) l)))
+            (s (substring s 0 (min (- space 3) (length s))))
+            (l (/ (+ 2 (length s)) 2))
+            (r (- (+ 2 (length s)) l)))
        (backward-char (1+ l))
-       (if current (undo-tree-insert ?*) (undo-tree-insert ? ))
-       (undo-tree-insert s)
+       (undo-tree-insert (if current "*[" " [" ))
+       (let ((undo-tree-insert-face undo-tree-insert-face-temp))
+         (undo-tree-insert s))
+       (undo-tree-insert "]")
        (backward-char r)
        (move-marker (undo-tree-node-marker node) (point))
        (put-text-property (- (point) l) (+ (point) r)
