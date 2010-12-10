@@ -594,7 +594,7 @@ Must be a postivie odd integer."
 (defvar undo-tree-visualizer-tree-node        ?○)
 (defvar undo-tree-visualizer-tree-active-node ?×)
 
-(defcustom undo-tree-visualizer-preset t
+(defcustom undo-tree-visualizer-preset nil
 "Choose a visual preset for undo trees."
   :group 'undo-tree
   :set (lambda (var val)
