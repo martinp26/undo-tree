@@ -582,59 +582,57 @@ Must be a postivie odd integer."
           :match (lambda (w n) (and (integerp n) (> n 0) (= (mod n 2) 1)))))
 (make-variable-buffer-local 'undo-tree-visualizer-spacing)
 
-(defcustom undo-tree-visualizer-tree-left ?╭
-  "Left corner for visualizer tree.
-Either use ASCII `+' or unicode `┌' or `╭'"
-  :group 'undo-tree
-  :type 'character)
+(defvar undo-tree-visualizer-tree-left        ?╭)
+(defvar undo-tree-visualizer-tree-right       ?╮)
+(defvar undo-tree-visualizer-tree-horizontal  ?─)
+(defvar undo-tree-visualizer-tree-cross       ?┼)
+(defvar undo-tree-visualizer-tree-tee         ?┬)
+(defvar undo-tree-visualizer-tree-eet         ?┴)
+(defvar undo-tree-visualizer-tree-vertical    ?│)
+(defvar undo-tree-visualizer-tree-node        ?○)
+(defvar undo-tree-visualizer-tree-active-node ?×)
 
-(defcustom undo-tree-visualizer-tree-right ?╮
-  "Right corner for visualizer tree.
-Either use ASCII `+' or unicode `┐' or `╮'"
+(defcustom undo-tree-visualizer-preset t
+"Choose a visual preset for undo trees."
   :group 'undo-tree
-  :type 'character)
-
-(defcustom undo-tree-visualizer-tree-horizontal ?─
-  "Horizontal bar for visualizer tree.
-Either use ASCII `-' or unicode `─'"
-  :group 'undo-tree
-  :type 'character)
-
-(defcustom undo-tree-visualizer-tree-cross ?┼
-  "Cross-shape for visualizer tree.
-Either use ASCII `+' or unicode `┼'"
-  :group 'undo-tree
-  :type 'character)
-
-(defcustom undo-tree-visualizer-tree-tee ?┬
-  "T-shape for visualizer tree.
-Either use ASCII `+' or unicode `┬'"
-  :group 'undo-tree
-  :type 'character)
-
-(defcustom undo-tree-visualizer-tree-eet ?┴
-  "Inverted T-shape for visualizer tree.
-Either use ASCII `+' or unicode `┴'"
-  :group 'undo-tree
-  :type 'character)
-
-(defcustom undo-tree-visualizer-tree-vertical ?│
-  "Vertical bar for visualizer tree.
-Either use ASCII `|' or unicode `│'"
-  :group 'undo-tree
-  :type 'character)
-
-(defcustom undo-tree-visualizer-tree-node ?○
-  "Standard node for visualizer tree.
-Either use ASCII `o' or unicode `○'"
-  :group 'undo-tree
-  :type 'character)
-
-(defcustom undo-tree-visualizer-tree-active-node ?×
-  "Active node for visualizer tree.
-Either use ASCII `x' or unicode `×'"
-  :group 'undo-tree
-  :type 'character)
+  :set (lambda (var val)
+	 (set var val)
+         (if (not val)
+             (progn  ;; ascii
+               (setq undo-tree-visualizer-tree-left        ?+)
+               (setq undo-tree-visualizer-tree-right       ?+)
+               (setq undo-tree-visualizer-tree-horizontal  ?-)
+               (setq undo-tree-visualizer-tree-cross       ?+)
+               (setq undo-tree-visualizer-tree-tee         ?+)
+               (setq undo-tree-visualizer-tree-eet         ?+)
+               (setq undo-tree-visualizer-tree-vertical    ?|)
+               (setq undo-tree-visualizer-tree-node        ?o)
+               (setq undo-tree-visualizer-tree-active-node ?x))
+           (if (eq val t)
+               (progn  ;; round
+                 (setq undo-tree-visualizer-tree-left        ?╭)
+                 (setq undo-tree-visualizer-tree-right       ?╮)
+                 (setq undo-tree-visualizer-tree-horizontal  ?─)
+                 (setq undo-tree-visualizer-tree-cross       ?┼)
+                 (setq undo-tree-visualizer-tree-tee         ?┬)
+                 (setq undo-tree-visualizer-tree-eet         ?┴)
+                 (setq undo-tree-visualizer-tree-vertical    ?│)
+                 (setq undo-tree-visualizer-tree-node        ?○)
+                 (setq undo-tree-visualizer-tree-active-node ?×))
+             (progn  ;; rectangular
+               (setq undo-tree-visualizer-tree-left        ?┌)
+               (setq undo-tree-visualizer-tree-right       ?┐)
+               (setq undo-tree-visualizer-tree-horizontal  ?─)
+               (setq undo-tree-visualizer-tree-cross       ?┼)
+               (setq undo-tree-visualizer-tree-tee         ?┬)
+               (setq undo-tree-visualizer-tree-eet         ?┴)
+               (setq undo-tree-visualizer-tree-vertical    ?│)
+               (setq undo-tree-visualizer-tree-node        ?○)
+               (setq undo-tree-visualizer-tree-active-node ?×)))))
+  :type '(choice
+	  (const :tag "ASCII" nil)
+	  (const :tag "Unicode round" t)
+	  (const :tag "Unicode rectangular" rectangular)))
 
 (defvar undo-tree-map nil
   "Keymap used in undo-tree-mode.")
