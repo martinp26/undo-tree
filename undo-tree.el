@@ -573,15 +573,15 @@ Must be a postivie odd integer."
           :match (lambda (w n) (and (integerp n) (> n 0) (= (mod n 2) 1)))))
 (make-variable-buffer-local 'undo-tree-visualizer-spacing)
 
-(defvar undo-tree-visualizer-tree-left        ?╭)
-(defvar undo-tree-visualizer-tree-right       ?╮)
-(defvar undo-tree-visualizer-tree-horizontal  ?─)
-(defvar undo-tree-visualizer-tree-cross       ?┼)
-(defvar undo-tree-visualizer-tree-tee         ?┬)
-(defvar undo-tree-visualizer-tree-eet         ?┴)
-(defvar undo-tree-visualizer-tree-vertical    ?│)
-(defvar undo-tree-visualizer-tree-node        ?○)
-(defvar undo-tree-visualizer-tree-active-node ?×)
+(defvar undo-tree-visualizer-tree-left)
+(defvar undo-tree-visualizer-tree-right)
+(defvar undo-tree-visualizer-tree-horizontal)
+(defvar undo-tree-visualizer-tree-cross)
+(defvar undo-tree-visualizer-tree-tee)
+(defvar undo-tree-visualizer-tree-eet)
+(defvar undo-tree-visualizer-tree-vertical)
+(defvar undo-tree-visualizer-tree-node)
+(defvar undo-tree-visualizer-tree-active-node)
 
 (defcustom undo-tree-visualizer-preset nil
 "Choose a visual preset for undo trees."
@@ -590,36 +590,36 @@ Must be a postivie odd integer."
 	 (set var val)
          (if (not val)
              (progn  ;; ascii
-               (setq undo-tree-visualizer-tree-left        ?+)
-               (setq undo-tree-visualizer-tree-right       ?+)
-               (setq undo-tree-visualizer-tree-horizontal  ?-)
-               (setq undo-tree-visualizer-tree-cross       ?+)
-               (setq undo-tree-visualizer-tree-tee         ?+)
-               (setq undo-tree-visualizer-tree-eet         ?+)
-               (setq undo-tree-visualizer-tree-vertical    ?|)
-               (setq undo-tree-visualizer-tree-node        ?o)
-               (setq undo-tree-visualizer-tree-active-node ?x))
+               (setq undo-tree-visualizer-tree-left        ?+
+                     undo-tree-visualizer-tree-right       ?+
+                     undo-tree-visualizer-tree-horizontal  ?-
+                     undo-tree-visualizer-tree-cross       ?+
+                     undo-tree-visualizer-tree-tee         ?+
+                     undo-tree-visualizer-tree-eet         ?+
+                     undo-tree-visualizer-tree-vertical    ?|
+                     undo-tree-visualizer-tree-node        ?o
+                     undo-tree-visualizer-tree-active-node ?x))
            (if (eq val t)
                (progn  ;; round
-                 (setq undo-tree-visualizer-tree-left        ?╭)
-                 (setq undo-tree-visualizer-tree-right       ?╮)
-                 (setq undo-tree-visualizer-tree-horizontal  ?─)
-                 (setq undo-tree-visualizer-tree-cross       ?┼)
-                 (setq undo-tree-visualizer-tree-tee         ?┬)
-                 (setq undo-tree-visualizer-tree-eet         ?┴)
-                 (setq undo-tree-visualizer-tree-vertical    ?│)
-                 (setq undo-tree-visualizer-tree-node        ?○)
-                 (setq undo-tree-visualizer-tree-active-node ?×))
+                 (setq undo-tree-visualizer-tree-left        ?╭
+                       undo-tree-visualizer-tree-right       ?╮
+                       undo-tree-visualizer-tree-horizontal  ?─
+                       undo-tree-visualizer-tree-cross       ?┼
+                       undo-tree-visualizer-tree-tee         ?┬
+                       undo-tree-visualizer-tree-eet         ?┴
+                       undo-tree-visualizer-tree-vertical    ?│
+                       undo-tree-visualizer-tree-node        ?○
+                       undo-tree-visualizer-tree-active-node ?×))
              (progn  ;; rectangular
-               (setq undo-tree-visualizer-tree-left        ?┌)
-               (setq undo-tree-visualizer-tree-right       ?┐)
-               (setq undo-tree-visualizer-tree-horizontal  ?─)
-               (setq undo-tree-visualizer-tree-cross       ?┼)
-               (setq undo-tree-visualizer-tree-tee         ?┬)
-               (setq undo-tree-visualizer-tree-eet         ?┴)
-               (setq undo-tree-visualizer-tree-vertical    ?│)
-               (setq undo-tree-visualizer-tree-node        ?○)
-               (setq undo-tree-visualizer-tree-active-node ?×)))))
+               (setq undo-tree-visualizer-tree-left        ?┌
+                     undo-tree-visualizer-tree-right       ?┐
+                     undo-tree-visualizer-tree-horizontal  ?─
+                     undo-tree-visualizer-tree-cross       ?┼
+                     undo-tree-visualizer-tree-tee         ?┬
+                     undo-tree-visualizer-tree-eet         ?┴
+                     undo-tree-visualizer-tree-vertical    ?│
+                     undo-tree-visualizer-tree-node        ?○
+                     undo-tree-visualizer-tree-active-node ?×)))))
   :type '(choice
 	  (const :tag "ASCII" nil)
 	  (const :tag "Unicode round" t)
